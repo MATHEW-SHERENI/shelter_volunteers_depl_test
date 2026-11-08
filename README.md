@@ -28,7 +28,7 @@ The first time you want to run this code, you will need to:
      MONGODB_HOST=<Atlas connection string without credentials>
      MONGODB_USERNAME=<MongoDB username>
      MONGODB_PASSWORD=<MongoDB password>
-     GOOGLE_CLIENT_ID=<Copy the value of REACT_APP_GOOGLE_CLIENT_ID from client_app/src/config.js>
+     GOOGLE_CLIENT_ID=<The same Google web OAuth client ID used by the frontend>
      JWT_SECRET=<Any long random string>
      GETHELP_OAUTH_CLIENT_ID=<GetHelp OAuth client ID>
      GETHELP_OAUTH_CLIENT_SECRET=<GetHelp OAuth client secret>
@@ -37,6 +37,40 @@ The first time you want to run this code, you will need to:
    * The GetHelp integration defaults to the existing QA OAuth/API endpoints. For another environment, configure <code>GETHELP_OAUTH_URL</code> and <code>GETHELP_API</code> to the appropriate service URLs.
    * If you do not already have a MongoDB Atlas cluster, follow the [MongoDB Atlas setup guide](docs/mongodb_atlas_setup.md) to create one and capture the connection string.
    * Keep this file local—do not commit it to the repository.
+
+### Google sign-in on Vercel
+
+Google sign-in requires a web OAuth client that authorizes the frontend's exact
+origin. An `Error 400: origin_mismatch` is a Google Cloud configuration error;
+adding a frontend route or changing Flask CORS does not authorize that origin.
+
+1. Open [Google Auth Platform → Clients](https://console.cloud.google.com/auth/clients)
+   in the project that owns your OAuth client. Select the **Web application**
+   client. If you cannot manage the existing client, create a web client in a
+   project you control.
+2. Under **Authorized JavaScript origins**, add
+   `https://shelter-volunteers-depl-test-s9br.vercel.app` and save. Include only
+   the scheme and hostname, without `/admin-login` or a trailing slash. Add each
+   additional frontend or custom domain separately. For local development, add
+   `http://localhost` and `http://localhost:3000` as separate origins. This app
+   uses Google's JavaScript popup callback, so no new redirect URI is needed.
+3. In the Vercel **frontend** project's environment variables, set
+   `REACT_APP_GOOGLE_CLIENT_ID` to that client's public ID and
+   `REACT_APP_SERVER_URL=/api`. In the **backend** project, set `GOOGLE_CLIENT_ID`
+   to the same public ID and `CLIENT_URLS` to the exact frontend origin. Keep
+   `JWT_SECRET` and database credentials on the backend.
+4. Redeploy any project whose environment variables changed. Create React App
+   reads the frontend client ID at build time. For local development, copy
+   `client_app/.env.example` to `client_app/.env.local`, fill in your public
+   client ID, and restart `npm start`. Leave `REACT_APP_SERVER_URL` empty locally.
+5. Verify that the frontend's `/api/health` returns JSON, then sign in with Google
+   from the authorized frontend domain. The existing client ID in
+   `client_app/src/config.js` remains the fallback when no frontend override is set.
+
+See [Google's setup instructions](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid)
+for OAuth client and origin configuration. If Google Cloud's audience is limited
+to a Workspace organization or selected test users, use an account allowed by
+that configuration.
 
 To grant the first system-admin permission, use the exact email address the user will sign in with. From the `server/` directory, with its virtual environment active and `server/.env.pre-production` configured, run:
 
