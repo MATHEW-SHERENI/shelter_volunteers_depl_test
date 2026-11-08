@@ -59,6 +59,9 @@ adding a frontend route or changing Flask CORS does not authorize that origin.
    `REACT_APP_SERVER_URL=/api`. In the **backend** project, set `GOOGLE_CLIENT_ID`
    to the same public ID and `CLIENT_URLS` to the exact frontend origin. Keep
    `JWT_SECRET` and database credentials on the backend.
+   Use `/api` exactly: `/api/*` is a routing pattern, not an API base URL.
+   The frontend's `vercel.json` build command also sets `/api` so that Vercel
+   builds use the configured same-origin proxy.
 4. Redeploy any project whose environment variables changed. Create React App
    reads the frontend client ID at build time. For local development, copy
    `client_app/.env.example` to `client_app/.env.local`, fill in your public

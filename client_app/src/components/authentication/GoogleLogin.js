@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { Link } from 'react-router-dom';
 import { loginAPI } from '../../api/login';
@@ -6,19 +7,34 @@ import {useAuth } from "../../contexts/AuthContext";
 
 function Login() {
   const { login } = useAuth();
-  const onSuccess = (credentialResponse) => {
-    loginAPI.login(credentialResponse.credential)
-      .then(response => {
-        login(response.user);
-      })
-      .catch(error => {
-        console.error('API Error:', error);
-      });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSuccess = async (credentialResponse) => {
+    setError("");
+    const credential = credentialResponse?.credential;
+    if (typeof credential !== "string" || !credential.trim()) {
+      setError("Google sign-in did not complete. Please try again.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await loginAPI.login(credential);
+      if (typeof response?.user?.email !== "string" || !response.user.email.trim()) {
+        throw new Error("Unable to complete Google sign-in. Please try again.");
+      }
+      login(response.user);
+    } catch (error) {
+      setError(error?.message || "Unable to sign in with Google. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
     
-    const onError = () => {
-      console.log('Login Failed');
-    };
+  const onError = () => {
+    setError("Google sign-in did not complete. Please try again.");
+  };
   
     return (
       <div className="home-container landing-page" id="top">
@@ -65,16 +81,19 @@ function Login() {
               <p className="landing-signin-description">
                 Sign in to continue to your volunteer, shelter, or admin workspace.
               </p>
-              <div className="google-login-wrapper">
-                <GoogleLogin
-                  onSuccess={onSuccess}
-                  onError={onError}
-                  theme="filled_blue"
-                  type="standard"
-                  shape="rectangular"
-                  size="large"
-                />
+              <div className="google-login-wrapper" aria-busy={submitting}>
+                {submitting ? <p role="status">Signing in...</p> : (
+                  <GoogleLogin
+                    onSuccess={onSuccess}
+                    onError={onError}
+                    theme="filled_blue"
+                    type="standard"
+                    shape="rectangular"
+                    size="large"
+                  />
+                )}
               </div>
+              {error && <div className="alert alert-danger mt-3" role="alert">{error}</div>}
               <p className="landing-signin-note">
                 Secure sign-in powered by Google
               </p>
