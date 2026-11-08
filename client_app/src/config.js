@@ -3,4 +3,4 @@ export const SERVER = process.env.REACT_APP_SERVER_URL !== undefined ?
 export const ENVIROMENT = "development";
 export const REACT_APP_GOOGLE_CLIENT_ID =
     process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim() ||
-    "214227450442-gp12srosdps9365qbfum19dvnutu9gi5.apps.googleusercontent.com";
+    "118076620789-oj2slv89vd4j650cdpf0keo7574c8nr2.apps.googleusercontent.com";
